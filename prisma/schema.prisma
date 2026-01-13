@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Ensure this matches your .env connection
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================================
+// 1. SIMPLE NAVIGATION
+// ==========================================================
+model Navigation {
+  id    Int    @id @default(autoincrement())
+  title String
+  url   String
+}
+
+// ==========================================================
+// 2. BESTSELLER COLLECTIONS
+// ==========================================================
+model Collection {
+  id       Int       @id @default(autoincrement())
+  title    String    @unique
+  products Product[]
+}
+
+// ==========================================================
+// 3. HIERARCHICAL CATEGORIES
+// ==========================================================
+model Category {
+  id       Int        @id @default(autoincrement())
+  title    String
+  url      String     @unique
+  lastPage Int        @default(0)
+
+  parentId Int?
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  products Product[]
+}
+
+// ==========================================================
+// 4. PRODUCTS (Updated for Deep Scrape)
+// ==========================================================
+model Product {
+  id     Int     @id @default(autoincrement())
+  title  String
+  price  String
+  image  String
+  author String?
+  promo  String?
+  
+  // --- NEW FIELDS FOR DETAIL PAGE ---
+  summary   String?  // Main description / blurb
+  condition String?  // e.g. "Very Good", "New"
+
+  // Stores details like SKU, Publisher, ISBN, Pages, Binding
+  specifications Json?   
+
+  // Stores the "Customers Also Like" list as a JSON array
+  recommendations Json?   
+
+  // Stores customer reviews as a JSON array
+  reviews        Json?    
+
+  // --- RELATIONS ---
+  category     Category?   @relation(fields: [categoryId], references: [id])
+  categoryId   Int?
+  
+  collection   Collection? @relation(fields: [collectionId], references: [id])
+  collectionId Int?
+}
